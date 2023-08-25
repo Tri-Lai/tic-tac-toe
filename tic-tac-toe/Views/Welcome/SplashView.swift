@@ -15,7 +15,7 @@ struct SplashView: View {
 
     var body: some View {
         if isActive {
-            ContentView()
+            WelcomeView()
                 .environmentObject(game)
         } else {
             VStack {
