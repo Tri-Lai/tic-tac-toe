@@ -12,7 +12,7 @@ struct tic_tac_toeApp: App {
     @StateObject var game = GameServices()
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
                 .environmentObject(game)
         }
     }
