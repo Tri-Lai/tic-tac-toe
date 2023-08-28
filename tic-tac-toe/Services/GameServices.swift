@@ -34,7 +34,7 @@ class GameServices: ObservableObject {
     var gameStarted: Bool {
         player1.isCurrent || player2.isCurrent
     }
-    
+        
     var boardDisabled: Bool {
         gameOver || !gameStarted || isThinking
     }
@@ -75,7 +75,6 @@ class GameServices: ObservableObject {
         }
     }
         
-    
     func checkWinning() {
         if player1.isWinner || player2.isWinner {
             gameOver = true
@@ -87,7 +86,6 @@ class GameServices: ObservableObject {
         player1.isCurrent.toggle()
         player2.isCurrent.toggle()
     }
-    
     
     //
     func makeMove(at index: Int) {
