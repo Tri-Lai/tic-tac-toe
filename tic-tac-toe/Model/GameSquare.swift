@@ -14,7 +14,7 @@ struct GameSquare {
     
     
     var image: Image {
-        if let player = player {
+        if let player = self.player {
             return player.gamePiece.image
         } else {
             return Image("none")

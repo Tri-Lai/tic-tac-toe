@@ -8,37 +8,102 @@
 import SwiftUI
 
 struct GameView: View {
+    @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) var dismiss
+    @Environment(\.scenePhase) var scenePhase
     @EnvironmentObject var game: GameServices
+    
+    // Timer
+    @State private var gameReset = false
+    @State private var timePlayed = 0
+    @State private var timeCount = 0
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var isTickUp = false // Stop the timer working in background proccess
+        
     var body: some View {
         NavigationStack {
             ZStack {
-                Image("game-background")
+                Image(colorScheme == .dark ? "blackboard-background" : "whitepaper-background")
                     .resizable()
                     .edgesIgnoringSafeArea(.all)
                 
                 VStack {
-                    if [game.player1.isCurrent, game.player2.isCurrent].allSatisfy({$0 == false}) {
-                        Text("Select a player to start")
-                    }
                     HStack {
-                        Button(game.player1.name) {
-                            game.player1.isCurrent = true
+                        if (!game.gameOver) {
+                            Text("Time: \(timePlayed)s")
+                                .font(.title3)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal)
+                            Spacer()
                         }
-                        .buttonStyle(PlayerButtonStyle(isCurrent: game.player1.isCurrent))
-                        
-                        Button(game.player2.name) {
-                            game.player2.isCurrent = true
-                            if game.gameType == .bot {
-                                Task {
-                                    await game.deviceMove()
+                    }
+                    
+                    if (game.gameStarted) {
+                        HStack {
+                            VStack(spacing:-10) {
+                                Image("player1-avatar")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .clipShape(Circle())
+                                    .frame(width: 90)
+                                
+                                Text("\(game.player1.name)")
+                                    .foregroundColor((game.player1.isCurrent) ? Color.green : Color.secondary)
+                            }
+                            .padding(.horizontal)
+                            
+                            Spacer()
+                            
+                            VStack(spacing:-10) {
+                                Image("player1-avatar")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .clipShape(Circle())
+                                    .frame(width: 90)
+                                
+                                Text("\(game.player2.name)")
+                                    
+                                    .foregroundColor((game.player2.isCurrent) ? Color.green : Color.secondary)
+                            }
+                            .padding(.horizontal)
+                            
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    if [game.player1.isCurrent, game.player2.isCurrent].allSatisfy({$0 == false}) {
+                        Text("Start with...")
+                            .font(.largeTitle)
+                            .foregroundColor(.primary)
+                    }
+                    
+                    // Hide player's turn buttons once selected
+                    if (!game.gameStarted) {
+                        HStack {
+                            Button(game.player1.name) {
+                                gameReset.toggle()
+                                isTickUp.toggle()
+                                game.player1.isCurrent = true
+                            }
+                            .buttonStyle(PlayerButtonStyle(isCurrent: game.player1.isCurrent))
+                            
+                            Button(game.player2.name) {
+                                gameReset.toggle()
+                                isTickUp.toggle()
+
+                                game.player2.isCurrent = true
+                                if game.gameType == .bot {
+                                    Task {
+                                        await game.deviceMove()
+                                    }
                                 }
                             }
-                        }
-                        .buttonStyle(PlayerButtonStyle(isCurrent: game.player2.isCurrent))
+                            .buttonStyle(PlayerButtonStyle(isCurrent: game.player2.isCurrent))
 
+                        }
+                        .disabled(game.gameStarted)
                     }
-                    .disabled(game.gameStarted)
                     
                     Spacer()
                     
@@ -74,15 +139,14 @@ struct GameView: View {
                     // Win/ Lose Message
                     VStack {
                         if game.gameOver {
-                            Text("Game Over")
-                            
                             if game.possibleMoves.isEmpty {
                                 Text("No one win")
                             } else {
-                                Text("\(game.currentPlayer.name) win!")
+                                Text("\(game.currentPlayer.name) win in \n\(timePlayed) seconds.")
                             }
                             
                             Button("New game") {
+                                gameReset.toggle()
                                 game.resetGame()
                             }
                             .buttonStyle(.borderedProminent)
@@ -92,7 +156,6 @@ struct GameView: View {
                     
                     Spacer()
                 }
-                    .navigationTitle("tic-tac-toe")
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button("Dismiss") {
@@ -102,6 +165,21 @@ struct GameView: View {
                         }
                     }
             }
+            .onReceive(timer, perform: { time in
+                guard isTickUp else { return }  // Pause counting time lapse in background.
+                if (!game.gameOver) {
+                    timePlayed = timeCount
+                }
+                
+                if (gameReset == false) {
+                    timeCount = 0
+                }
+                
+                timeCount += 1
+            })
+            .onChange(of: scenePhase, perform: { newPhase in
+                isTickUp = (newPhase == .active) ? true : false
+            })
         }
     }
 }
