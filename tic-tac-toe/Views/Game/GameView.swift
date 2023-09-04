@@ -2,23 +2,27 @@
 //  GameView.swift
 //  tic-tac-toe
 //
-//  Created by Trí Lai on 20/08/2023.
+//  Created by Trí Lai on 19/08/2023.
 //
 
 import SwiftUI
 
 struct GameView: View {
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.dismiss) var dismiss
-    @Environment(\.scenePhase) var scenePhase
     @EnvironmentObject var game: GameServices
+    @State private var playerName = ""
+    @State private var opponentName = ""
+    @State private var gameType: GameType = GameType.undefined
+    @State private var start = false
+
+    @State private var singleModeSelected = false
+    @State private var multiplayerModeSelected = false
     
-    // Timer
-    @State private var gameReset = false
-    @State private var timePlayed = 0
-    @State private var timeCount = 0
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-    @State private var isTickUp = false // Stop the timer working in background proccess
+    @State private var singlePlayerTextStyle = false
+    @State private var twoPlayerTextStyle = false
+
+    
+    @FocusState private var focus: Bool
         
     var body: some View {
         NavigationStack {
@@ -28,159 +32,102 @@ struct GameView: View {
                     .edgesIgnoringSafeArea(.all)
                 
                 VStack {
-                    HStack {
-                        if (!game.gameOver) {
-                            Text("Time: \(timePlayed)s")
-                                .font(.title3)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal)
-                            Spacer()
-                        }
-                    }
+                    Text("Choose play mode")
+                        .font(.largeTitle.weight(.heavy))
                     
-                    if (game.gameStarted) {
-                        HStack {
-                            VStack(spacing:-10) {
-                                Image("player1-avatar")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .clipShape(Circle())
-                                    .frame(width: 90)
-                                
-                                Text("\(game.player1.name)")
-                                    .foregroundColor((game.player1.isCurrent) ? Color.green : Color.secondary)
-                            }
-                            .padding(.horizontal)
+                    HStack(spacing: 30) {
+                        Button {
+                            gameType = .bot
+                            multiplayerModeSelected = false
+                            singleModeSelected = true
                             
-                            Spacer()
-                            
-                            VStack(spacing:-10) {
-                                Image("player1-avatar")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .clipShape(Circle())
-                                    .frame(width: 90)
-                                
-                                Text("\(game.player2.name)")
-                                    
-                                    .foregroundColor((game.player2.isCurrent) ? Color.green : Color.secondary)
-                            }
-                            .padding(.horizontal)
-                            
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    if [game.player1.isCurrent, game.player2.isCurrent].allSatisfy({$0 == false}) {
-                        Text("Start with...")
-                            .font(.largeTitle)
-                            .foregroundColor(.primary)
-                    }
-                    
-                    // Hide player's turn buttons once selected
-                    if (!game.gameStarted) {
-                        HStack {
-                            Button(game.player1.name) {
-                                gameReset.toggle()
-                                isTickUp.toggle()
-                                game.player1.isCurrent = true
-                            }
-                            .buttonStyle(PlayerButtonStyle(isCurrent: game.player1.isCurrent))
-                            
-                            Button(game.player2.name) {
-                                gameReset.toggle()
-                                isTickUp.toggle()
-
-                                game.player2.isCurrent = true
-                                if game.gameType == .bot {
-                                    Task {
-                                        await game.deviceMove()
-                                    }
-                                }
-                            }
-                            .buttonStyle(PlayerButtonStyle(isCurrent: game.player2.isCurrent))
-
-                        }
-                        .disabled(game.gameStarted)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack {
-                        HStack {
-                            ForEach(0...2, id:\.self) { index in
-                                SquareView(index: index)
-                            }
-                        }
-                        HStack {
-                            ForEach(3...5, id:\.self) { index in
-                                SquareView(index: index)
-                            }
-                        }
-                        HStack {
-                            ForEach(6...8, id:\.self) { index in
-                                SquareView(index: index)
-                            }
-                        }
-                    }
-                    .overlay {
-                        if game.isThinking {
+                        } label: {
                             VStack {
-                                Text("Thinking...")
-                                    .foregroundColor(.cyan)
-                                    .background(Rectangle().fill(Color.primary))
-                                ProgressView()
+                                Image(systemName: "person.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: 70, maxHeight: 70)
+                                    .padding(40)
+                                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(lineWidth: 3))
+                                Text("Single player")
                             }
                         }
+                        .buttonStyle(SelectedButtonModifier(isEnabled: singleModeSelected))
+                        
+                        Button {
+                            gameType = .peer
+                            multiplayerModeSelected = true
+                            singleModeSelected = false
+                        } label: {
+                            VStack {
+                                Image(systemName: "person.2.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: 70, maxHeight: 70)
+                                    .padding(40)
+                                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(lineWidth: 3))
+                                
+                                Text("Two players")
+                            }
+                        }
+                        .buttonStyle(SelectedButtonModifier(isEnabled: multiplayerModeSelected))
                     }
-                    .disabled(game.boardDisabled)
                     
-                    // Win/ Lose Message
+                    
+                    Text(gameType.gameTypeDesc)
+                        .padding()
+                    
                     VStack {
-                        if game.gameOver {
-                            if game.possibleMoves.isEmpty {
-                                Text("No one win")
-                            } else {
-                                Text("\(game.currentPlayer.name) win in \n\(timePlayed) seconds.")
+                        switch gameType {
+                        case .bot:
+                            VStack {
+                                TextField("Your name", text: $playerName)
                             }
-                            
-                            Button("New game") {
-                                gameReset.toggle()
-                                game.resetGame()
+                        case .peer:
+                            VStack {
+                                TextField("First player name", text: $playerName)
+                                TextField("Second player name", text: $opponentName)
                             }
-                            .buttonStyle(.borderedProminent)
+                        case .undefined:
+                            EmptyView()
                         }
                     }
-                    .font(.largeTitle)
+                    .padding()
+                    .textFieldStyle(.roundedBorder)
+                    .focused($focus)
+                    .frame(width: 350)
                     
-                    Spacer()
-                }
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Dismiss") {
-                                dismiss()
+                    if gameType != .undefined {
+                        Button {
+                            game.setupGame(gameType: gameType, player1Name: playerName, player2Name: opponentName)
+                            focus = false
+                            start.toggle()
+                        } label: {
+                            HStack {
+                                Image(systemName: "play")
+                                Text("Start game")
                             }
-                            .buttonStyle(.plain)
+                            .padding()
                         }
+                        .disabled(
+                            gameType == .undefined ||
+                            gameType == .bot && playerName.isEmpty ||
+                            gameType == .peer && (playerName.isEmpty || opponentName.isEmpty)
+                        )
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .shadow(radius: 10)
                     }
+                }
+                .padding()
+                .fullScreenCover(isPresented: $start, content: {MatchView()})
+                .onAppear {
+                    game.resetGame()   // Reset game when new view appear
+                }
             }
-            .onReceive(timer, perform: { time in
-                guard isTickUp else { return }  // Pause counting time lapse in background.
-                if (!game.gameOver) {
-                    timePlayed = timeCount
-                }
-                
-                if (gameReset == false) {
-                    timeCount = 0
-                }
-                
-                timeCount += 1
-            })
-            .onChange(of: scenePhase, perform: { newPhase in
-                isTickUp = (newPhase == .active) ? true : false
-            })
         }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: DismissButton())
     }
 }
 
@@ -191,14 +138,15 @@ struct GameView_Previews: PreviewProvider {
     }
 }
 
-// Custom button style for reduce redundancy
-struct PlayerButtonStyle: ButtonStyle {
-    let isCurrent: Bool
+struct SelectedButtonModifier: ButtonStyle {
+    var isEnabled: Bool
+ 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+            .font(.system(size: 14))
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 10)
-                .fill(isCurrent ? Color.green : Color.gray))
+                .fill(isEnabled ? Color.blue : Color("button-color")))
             .foregroundColor(.white)
     }
 }

@@ -27,7 +27,7 @@ struct WelcomeView: View {
                 Spacer()
                 
                 NavigationLink {
-                    ContentView()
+                    GameView()
                 } label: {
                     Text("Play")
                         .modifier(ButtonModifier())
