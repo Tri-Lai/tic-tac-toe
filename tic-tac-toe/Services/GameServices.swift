@@ -17,6 +17,8 @@ class GameServices: ObservableObject {
     @Published var gameBoard = GameSquare.reset
     @Published var isThinking = false // Device move
     
+    @ObservedObject var leaderboard = LeaderboardModel()
+
     private let agentNames = ["Phoenix", "Sage", "Sova", "Viper", "Cypher", "Reyna", "KillJoy", "Jett", "Raze",
                               "KAY/O", "Chamber", "Neon", "Astra", "Yoru", "Skye"]
     
@@ -74,20 +76,63 @@ class GameServices: ObservableObject {
             gameBoard[index].player = player2
         }
     }
-        
+    
+    
+    /// Check winning condition on one of two players
     func checkWinning() {
+        
+        // One player win detected
         if player1.isWinner || player2.isWinner {
-            gameOver = true
+            gameOver = true // End the game
+            
+            // Increase win count of player and add it into Leaderboard
+            if player1.isWinner {
+                player1.winCount += 1
+                updateLeaderBoard(player: player1)
+            } else {
+                player2.winCount += 1
+                updateLeaderBoard(player: player2)
+            }
         }
     }
     
-    // Switch play turns
+    
+    func updateLeaderBoard(player: Player) {
+        var existedPlayer: Leader?
+        
+        let isPlayerExist = leaderboard.leaderList.contains(where: { leader in
+            if leader.playerName.lowercased() == player.name.lowercased() {
+                print("\n\n------\nFOUND!!!")
+                existedPlayer = leader
+                return true
+            } else {
+                return false
+            }
+        })
+        
+        // Only update winning stat if they already exist in Leaderboard
+        if isPlayerExist {
+            print("Exist")
+            leaderboard.deleteData(leader: existedPlayer!)
+            
+            leaderboard.writeData(name: player.name, win: player.winCount)
+        } else { // Add new player's record
+            print("NO Exist")
+
+            leaderboard.writeData(name: player.name, win: player.winCount)
+        }
+    }
+    
+    /// Switch play turns
     func toggleCurrent() {
         player1.isCurrent.toggle()
         player2.isCurrent.toggle()
     }
     
-    //
+    
+    /// This function allows user to make a move
+    /// at a specific location on the game board
+    /// - Parameter index: square location
     func makeMove(at index: Int) {
         
         // Player selects a square
@@ -133,5 +178,9 @@ class GameServices: ObservableObject {
         
         isThinking.toggle()
     }
+    
+    /** --- Fire --**/
+    
+    
 }
     
