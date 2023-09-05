@@ -48,7 +48,7 @@ struct WelcomeView: View {
                 }
                 
                 NavigationLink {
-                    GameView()
+                    SettingView()
                 } label: {
                     Text("Settings")
                         .modifier(ButtonModifier())

@@ -25,7 +25,7 @@ struct DismissButton: View {
                     .font(.system(size: 18, weight: .medium))
             }
             // Custom adapt color to light and dark mode
-            .foregroundColor(colorScheme == .light ? .black : .purple)
+            .foregroundColor(colorScheme == .light ? .black : .white)
         }
     }
 }

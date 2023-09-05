@@ -51,6 +51,7 @@ struct GameView: View {
                                     .background(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(lineWidth: 3))
                                 Text("Single player")
                             }
+                            .foregroundColor((colorScheme == .dark) ? Color("button-color") : .white)
                         }
                         .buttonStyle(SelectedButtonModifier(isEnabled: singleModeSelected))
                         
@@ -69,6 +70,7 @@ struct GameView: View {
                                 
                                 Text("Two players")
                             }
+                            .foregroundColor((colorScheme == .dark) ? Color("button-color") : .white)
                         }
                         .buttonStyle(SelectedButtonModifier(isEnabled: multiplayerModeSelected))
                     }
@@ -139,6 +141,8 @@ struct GameView_Previews: PreviewProvider {
 }
 
 struct SelectedButtonModifier: ButtonStyle {
+    @Environment(\.colorScheme) var colorScheme
+
     var isEnabled: Bool
  
     func makeBody(configuration: Configuration) -> some View {
@@ -146,7 +150,9 @@ struct SelectedButtonModifier: ButtonStyle {
             .font(.system(size: 14))
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 10)
-                .fill(isEnabled ? Color.blue : Color("button-color")))
+                .fill((colorScheme == .light) ?
+                      (isEnabled ? Color.blue : Color("button-color")) :
+                        (isEnabled ? .green : .secondary)))
             .foregroundColor(.white)
     }
 }

@@ -22,6 +22,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 struct tic_tac_toeApp: App {
     // register app delegate for Firebase setup
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    @AppStorage("isDarkMode") private var isDarkMode = false
 
     
     @StateObject var game = GameServices()
@@ -29,6 +30,7 @@ struct tic_tac_toeApp: App {
         WindowGroup {
             SplashView()
                 .environmentObject(game)
+                .preferredColorScheme(isDarkMode ? .dark : .light)
         }
     }
 }
