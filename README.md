@@ -15,7 +15,7 @@ The game focuses on boardgame genre, which takes the ideas of traditional TicTac
 
 ## Documentation
 
-More about this app can be found [here](https://rmiteduau-my.sharepoint.com/:w:/g/personal/s3799602_rmit_edu_vn/Ee909dO2OX9Eukaw4WmFVCoBj9ORGx1EMJLZF2yHdsdwOg?e=HvSoFO).
+More about this app can be found [here](https://online.fliphtml5.com/jgfdw/aloe/).
 
 
 ## Installation and Instruction
